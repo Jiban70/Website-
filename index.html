@@ -1,1 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Website Builder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#1a2332',
+                            950: '#0a0f1a'
+                        }
+                    },
+                    animation: {
+                        'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
+                        'fade-in': 'fade-in 0.3s ease-out',
+                        'slide-in': 'slide-in 0.3s ease-out'
+                    },
+                    keyframes: {
+                        'pulse-subtle': {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7' }
+                        },
+                        'fade-in': {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        'slide-in': {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom CSS for enhanced features */
+        :root {
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-600: #475569;
+            --blue-600: #2563eb;
+            --blue-500: #3b82f6;
+            --emerald-500: #10b981;
+            --amber-500: #f59e0b;
+            --rose-500: #f43f5e;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: var(--slate-900);
+            color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        /* Glass effect */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(71, 85, 105, 0.6);
+            border-radius: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.8);
+        }
+        
+        /* Code editor styling */
+        #codeEditor {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            tab-size: 2;
+        }
+        
+        /* Responsive iframe */
+        .responsive-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+        
+        /* Traffic light buttons */
+        .traffic-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        /* Mobile frame simulator */
+        .mobile-frame {
+            max-width: 375px;
+            border: 12px solid #1e293b;
+            border-radius: 24px;
+            height: 667px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Loading animation */
+        .loading-dots {
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .loading-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: currentColor;
+            margin: 0 2px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+        
+        /* Smooth transitions */
+        .transition-all {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100">
+    <!-- Main Container -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar -->
+        <div class="w-64 bg-slate-800 flex flex-col border-r border-slate-700">
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b border-slate-700">
+                <button id="newProjectBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-plus"></i>
+                    New Project
+                </button>
+            </div>
+            
+            <!-- Projects List -->
+            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-medium text-slate-300">Projects</h3>
+                    <div class="relative">
+                        <input type="text" id="projectSearch" placeholder="Search..." class="bg-slate-700 text-sm text-slate-200 rounded-lg pl-8 pr-3 py-1.5 w-40 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <i class="fas fa-search absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs"></i>
+                    </div>
+                </div>
+                
+                <div id="projectsList" class="space-y-2">
+                    <!-- Projects will be loaded here -->
+                    <div class="text-slate-400 text-sm py-8 text-center">
+                        <i class="fas fa-folder-open text-2xl mb-2 block"></i>
+                        No projects yet
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-slate-700">
+                <button id="settingsBtn" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-cog"></i>
+                    Settings
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-slate-800 border-b border-slate-700 p-4 flex items-center justify-between">
+                <!-- Traffic Lights -->
+                <div class="flex items-center">
+                    <div class="flex mr-6">
+                        <div class="traffic-light bg-red-500"></div>
+                        <div class="traffic-light bg-amber-500"></div>
+                        <div class="traffic-light bg-emerald-500"></div>
+                    </div>
+                    
+                    <!-- Project Title -->
+                    <div class="flex items-center">
+                        <i class="fas fa-code text-blue-400 mr-2"></i>
+                        <h1 id="projectTitle" class="font-medium text-slate-200">Untitled Project</h1>
+                        <button id="renameProjectBtn" class="ml-2 text-slate-400 hover:text-slate-200">
+                            <i class="fas fa-edit text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tabs and Actions -->
+                <div class="flex items-center space-x-4">
+                    <!-- Tabs -->
+                    <div class="flex bg-slate-700 rounded-lg p-1">
+                        <button id="previewTab" class="tab-btn px-4 py-2 rounded-md font-medium transition-all bg-blue-600 text-white">
+                            <i class="fas fa-eye mr-2"></i>Preview
+                        </button>
+                        <button id="codeTab" class="tab-btn px-4 py-2 rounded-md font-medium transition-all text-slate-300 hover:text-white">
+                            <i class="fas fa-code mr-2"></i>Code
+                        </button>
+                        <button id="assetsTab" class="tab-btn px-4 py-2 rounded-md font-medium transition-all text-slate-300 hover:text-white">
+                            <i class="fas fa-image mr-2"></i>Assets
+                        </button>
+                    </div>
+                    
+                    <!-- Download Button -->
+                    <button id="downloadBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition-all flex items-center gap-2">
+                        <i class="fas fa-download"></i>
+                        Download
+                    </button>
+                    
+                    <!-- Device Preview Toggle -->
+                    <div class="relative">
+                        <button id="deviceToggle" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-2 px-3 rounded-lg transition-all flex items-center gap-2">
+                            <i class="fas fa-desktop"></i>
+                        </button>
+                        <div id="deviceMenu" class="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg border border-slate-700 hidden z-10">
+                            <button class="device-option w-full text-left px-4 py-2.5 hover:bg-slate-700 text-slate-200">
+                                <i class="fas fa-desktop mr-2"></i>Desktop
+                            </button>
+                            <button class="device-option w-full text-left px-4 py-2.5 hover:bg-slate-700 text-slate-200">
+                                <i class="fas fa-tablet-alt mr-2"></i>Tablet
+                            </button>
+                            <button class="device-option w-full text-left px-4 py-2.5 hover:bg-slate-700 text-slate-200">
+                                <i class="fas fa-mobile-alt mr-2"></i>Mobile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Main Content Panels -->
+            <div class="flex-1 overflow-hidden">
+                <!-- Preview Panel -->
+                <div id="previewPanel" class="h-full p-4 bg-slate-850 overflow-auto custom-scrollbar">
+                    <div class="flex justify-center items-start h-full">
+                        <div id="previewContainer" class="w-full h-full rounded-lg overflow-hidden">
+                            <iframe id="previewFrame" class="responsive-iframe rounded-lg" srcdoc="<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'><style>body { font-family: sans-serif; padding: 20px; }</style></head><body><h1>Your website will appear here</h1><p>Generate a website using the prompt below.</p></body></html>"></iframe>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Code Panel -->
+                <div id="codePanel" class="h-full hidden">
+                    <div class="flex items-center justify-between bg-slate-800 px-4 py-2 border-b border-slate-700">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-code text-blue-400 mr-2"></i>
+                            <span class="font-medium text-slate-200">index.html</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button id="copyCodeBtn" class="text-slate-400 hover:text-slate-200 p-1.5 rounded">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button id="formatCodeBtn" class="text-slate-400 hover:text-slate-200 p-1.5 rounded">
+                                <i class="fas fa-align-left"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="codeEditor" class="w-full h-[calc(100%-44px)] bg-slate-950 text-slate-200 p-4 font-mono resize-none focus:outline-none custom-scrollbar" spellcheck="false">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Website</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">Welcome to Your AI-Generated Website</h1>
+        <p class="text-gray-600 mb-8">This is a starting point. Use the prompt below to generate your custom website.</p>
+        <div class="bg-white p-8 rounded-xl shadow-lg max-w-2xl">
+            <p class="text-gray-700">Edit this code or generate a new website using the prompt input below.</p>
+        </div>
+    </div>
+</body>
+</html></textarea>
+                </div>
+                
+                <!-- Assets Panel -->
+                <div id="assetsPanel" class="h-full hidden p-4 overflow-auto custom-scrollbar">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-medium text-slate-200">Project Assets</h2>
+                            <button id="addAssetBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all flex items-center gap-2">
+                                <i class="fas fa-plus"></i>
+                                Add Asset
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <!-- Assets will be loaded here -->
+                            <div class="bg-slate-800 rounded-lg p-4 text-center border border-dashed border-slate-600">
+                                <i class="fas fa-image text-3xl text-slate-500 mb-2"></i>
+                                <p class="text-sm text-slate-400">No assets yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer with Input -->
+    <footer class="bg-slate-800 border-t border-slate-700 p-4 flex-shrink-0">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex gap-3">
+                <div class="flex-1 relative">
+                    <textarea id="promptInput" rows="1" placeholder="Describe the website you want to create..." class="w-full bg-slate-700 text-slate-200 rounded-lg pl-4 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none custom-scrollbar" style="min-height: 44px; max-height: 200px;"></textarea>
+                    <button id="clearPromptBtn" class="absolute right-3 top-3 text-slate-400 hover:text-slate-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                        <button id="aiOptionsBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-3 px-3 rounded-lg transition-all">
+                            <i class="fas fa-sliders-h"></i>
+                        </button>
+                        
+                        <div id="aiOptionsMenu" class="absolute bottom-full right-0 mb-2 w-64 bg-slate-800 rounded-lg shadow-lg border border-slate-700 hidden z-10 p-4">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Creativity</label>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-slate-400">Precise</span>
+                                        <input type="range" id="temperatureSlider" min="0" max="10" value="7" class="w-32">
+                                        <span class="text-xs text-slate-400">Creative</span>
+                                    </div>
+                                    <div class="text-xs text-slate-500 mt-1 text-center">Temperature: <span id="tempValue">0.7</span></div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Code Length</label>
+                                    <select id="maxTokensSelect" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="2000">Short (2K tokens)</option>
+                                        <option value="4000" selected>Medium (4K tokens)</option>
+                                        <option value="6000">Long (6K tokens)</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Framework</label>
+                                    <select id="frameworkSelect" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="tailwind">Tailwind CSS</option>
+                                        <option value="vanilla">Vanilla CSS</option>
+                                        <option value="bootstrap">Bootstrap</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="sendBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center gap-2 min-w-[120px] justify-center">
+                        <span id="sendBtnText">
+                            <i class="fas fa-paper-plane mr-2"></i>Generate
+                        </span>
+                        <span id="loadingIndicator" class="hidden">
+                            <div class="loading-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-2 flex items-center justify-between">
+                <div class="flex items-center space-x-4 text-sm text-slate-400">
+                    <button class="prompt-template hover:text-slate-200 transition-all" data-template="landing">🌐 Landing Page</button>
+                    <button class="prompt-template hover:text-slate-200 transition-all" data-template="dashboard">📊 Dashboard</button>
+                    <button class="prompt-template hover:text-slate-200 transition-all" data-template="ecommerce">🛒 E-commerce</button>
+                    <button class="prompt-template hover:text-slate-200 transition-all" data-template="blog">📝 Blog</button>
+                </div>
+                
+                <div id="tokenCounter" class="text-xs text-slate-500">
+                    Tokens used: <span id="tokenCount">0</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="glass-panel rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-slate-700 flex items-center justify-between">
+                <h2 class="text-xl font-medium text-slate-200">
+                    <i class="fas fa-cog mr-2 text-blue-400"></i>Settings
+                </h2>
+                <button id="closeSettingsBtn" class="text-slate-400 hover:text-slate-200 text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                <div class="space-y-6">
+                    <!-- API Settings -->
+                    <div>
+                        <h3 class="text-lg font-medium text-slate-200 mb-4 flex items-center">
+                            <i class="fas fa-key mr-2 text-amber-500"></i>API Configuration
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-1">API URL</label>
+                                <input type="text" id="apiUrl" value="https://openrouter.ai/api/v1/chat/completions" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <p class="text-xs text-slate-500 mt-1">Default OpenRouter endpoint</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-1">API Key</label>
+                                <div class="relative">
+                                    <input type="password" id="apiKey" placeholder="Enter your API key" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 pr-10">
+                                    <button id="toggleApiKey" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-200">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1">Get a free key from <a href="https://openrouter.ai" target="_blank" class="text-blue-400 hover:underline">OpenRouter</a></p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-1">Model</label>
+                                <select id="apiModel" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="deepseek/deepseek-r1:free" selected>deepseek/deepseek-r1:free</option>
+                                    <option value="meta-llama/llama-3.1-70b-instruct:free">meta-llama/llama-3.1-70b-instruct:free</option>
+                                    <option value="google/gemini-flash-1.5-8b:free">google/gemini-flash-1.5-8b:free</option>
+                                    <option value="openai/gpt-3.5-turbo">openai/gpt-3.5-turbo</option>
+                                </select>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Max Tokens</label>
+                                    <input type="number" id="maxTokens" value="4000" min="500" max="8000" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-300 mb-1">Temperature</label>
+                                    <input type="number" id="temperature" value="0.7" min="0" max="1" step="0.1" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Editor Settings -->
+                    <div>
+                        <h3 class="text-lg font-medium text-slate-200 mb-4 flex items-center">
+                            <i class="fas fa-edit mr-2 text-emerald-500"></i>Editor Settings
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-300">Dark Mode</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="darkModeToggle" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-300 mb-1">Font Size</label>
+                                <input type="range" id="fontSizeSlider" min="12" max="20" value="14" class="w-full">
+                                <div class="text-xs text-slate-500 mt-1 text-center">Size: <span id="fontSizeValue">14</span>px</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-300">Auto-save</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="autoSaveToggle" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-slate-700 flex justify-end">
+                <button id="saveSettingsBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all">
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New Project Modal -->
+    <div id="newProjectModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="glass-panel rounded-xl w-full max-w-md p-6">
+            <h2 class="text-xl font-medium text-slate-200 mb-6">
+                <i class="fas fa-plus mr-2 text-blue-400"></i>New Project
+            </h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Project Name</label>
+                    <input type="text" id="newProjectName" value="Untitled Project" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Template</label>
+                    <select id="projectTemplate" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="blank">Blank</option>
+                        <option value="landing">Landing Page</option>
+                        <option value="dashboard">Dashboard</option>
+                        <option value="ecommerce">E-commerce</option>
+                        <option value="blog">Blog</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Framework</label>
+                    <select id="projectFramework" class="w-full bg-slate-700 text-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="tailwind" selected>Tailwind CSS</option>
+                        <option value="vanilla">Vanilla CSS</option>
+                        <option value="bootstrap">Bootstrap</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-8">
+                <button id="cancelProjectBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-2.5 px-6 rounded-lg transition-all">
+                    Cancel
+                </button>
+                <button id="createProjectBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all">
+                    Create Project
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Asset Upload Modal -->
+    <div id="assetModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="glass-panel rounded-xl w-full max-w-md p-6">
+            <h2 class="text-xl font-medium text-slate-200 mb-6">
+                <i class="fas fa-upload mr-2 text-blue-400"></i>Upload Asset
+            </h2>
+            
+            <div class="space-y-4">
+                <div class="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center">
+                    <i class="fas fa-cloud-upload-alt text-3xl text-slate-500 mb-4"></i>
+                    <p class="text-slate-300 mb-2">Drag & drop or click to upload</p>
+                    <p class="text-sm text-slate-500">Supports images (PNG, JPG, GIF)</p>
+                    <input type="file" id="assetFileInput" accept="image/*" class="hidden">
+                    <button id="selectAssetBtn" class="mt-4 bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-2 px-6 rounded-lg transition-all">
+                        Select File
+                    </button>
+                </div>
+                
+                <div id="assetPreview" class="hidden">
+                    <div class="bg-slate-800 rounded-lg p-4 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-slate-700 rounded mr-3 flex items-center justify-center">
+                                <i class="fas fa-image text-slate-400"></i>
+                            </div>
+                            <div>
+                                <p id="assetFileName" class="text-slate-200 font-medium"></p>
+                                <p id="assetFileSize" class="text-xs text-slate-500"></p>
+                            </div>
+                        </div>
+                        <button id="removeAssetBtn" class="text-slate-400 hover:text-rose-500">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-8">
+                <button id="cancelAssetBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium py-2.5 px-6 rounded-lg transition-all">
+                    Cancel
+                </button>
+                <button id="uploadAssetBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all">
+                    Upload
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status Toast -->
+    <div id="statusToast" class="fixed bottom-20 right-4 bg-slate-800 text-slate-200 rounded-lg shadow-lg border border-slate-700 p-4 max-w-sm hidden z-50">
+        <div class="flex items-start">
+            <i id="toastIcon" class="fas fa-info-circle text-blue-400 mt-0.5 mr-3"></i>
+            <div class="flex-1">
+                <p id="toastMessage" class="font-medium"></p>
+                <p id="toastDetails" class="text-sm text-slate-400 mt-1"></p>
+            </div>
+            <button id="closeToastBtn" class="text-slate-400 hover:text-slate-200 ml-3">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
 
+    <!-- JavaScript Application -->
+    <script>
+        // AI Website Builder Application
+        class AIWebsiteBuilder {
+            constructor() {
+                this.state = {
+                    currentProject: null,
+                    projects: this.loadProjects(),
+                    settings: this.loadSettings(),
+                    editorContent: '',
+                    history: [],
+                    aiContext: [],
+                    unsavedChanges: false,
+                    totalTokensUsed: 0
+                };
+                
+                this.SYSTEM_PROMPTS = {
+                    basic: `You are a world-class web developer. Output ONLY raw, valid, single-file HTML/CSS/JS code. Do not include markdown backticks or explanations.`,
+                    
+                    enhanced: (framework) => `You are an expert web developer creating production-ready websites.
+                    REQUIREMENTS:
+                    1. Use ${framework === 'tailwind' ? 'Tailwind CSS via CDN' : framework === 'bootstrap' ? 'Bootstrap 5 via CDN' : 'Vanilla CSS'} for styling
+                    2. Include proper viewport meta tag
+                    3. Ensure WCAG 2.1 AA accessibility standards
+                    4. Make fully responsive with mobile-first approach
+                    5. Include graceful loading states
+                    6. Add appropriate ARIA attributes
+                    7. Use semantic HTML5 elements
+                    8. Optimize for Core Web Vitals
+                    9. Include error handling for JavaScript
+                    10. No external dependencies (all code in one HTML file)
+                    
+                    Return ONLY the complete HTML file with no markdown, no explanations.`
+                };
+                
+                this.init();
+            }
+            
+            init() {
+                this.bindEvents();
+                this.loadUI();
+                this.updateProjectsList();
+                this.updateTokenCounter();
+                
+                // Auto-save listener
+                setInterval(() => {
+                    if (this.state.unsavedChanges && this.state.currentProject && this.state.settings.editor.autoSave) {
+                        this.saveCurrentProject();
+                    }
+                }, 30000); // Auto-save every 30 seconds
+            }
+            
+            bindEvents() {
+                // Sidebar buttons
+                document.getElementById('newProjectBtn').addEventListener('click', () => this.showNewProjectModal());
+                document.getElementById('settingsBtn').addEventListener('click', () => this.showSettingsModal());
+                
+                // Tabs
+                document.getElementById('previewTab').addEventListener('click', () => this.showTab('preview'));
+                document.getElementById('codeTab').addEventListener('click', () => this.showTab('code'));
+                document.getElementById('assetsTab').addEventListener('click', () => this.showTab('assets'));
+                
+                // Header buttons
+                document.getElementById('downloadBtn').addEventListener('click', () => this.downloadProject());
+                document.getElementById('renameProjectBtn').addEventListener('click', () => this.renameCurrentProject());
+                document.getElementById('copyCodeBtn').addEventListener('click', () => this.copyCodeToClipboard());
+                document.getElementById('formatCodeBtn').addEventListener('click', () => this.formatCode());
+                
+                // Device toggle
+                document.getElementById('deviceToggle').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.getElementById('deviceMenu').classList.toggle('hidden');
+                });
+                
+                document.querySelectorAll('.device-option').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const device = e.target.textContent.trim();
+                        this.setDevicePreview(device);
+                        document.getElementById('deviceMenu').classList.add('hidden');
+                    });
+                });
+                
+                // Footer actions
+                document.getElementById('sendBtn').addEventListener('click', () => this.generateWebsite());
+                document.getElementById('clearPromptBtn').addEventListener('click', () => {
+                    document.getElementById('promptInput').value = '';
+                    this.adjustTextareaHeight();
+                });
+                
+                document.getElementById('promptInput').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.generateWebsite();
+                    }
+                    this.adjustTextareaHeight();
+                });
+                
+                document.getElementById('promptInput').addEventListener('input', () => this.adjustTextareaHeight());
+                
+                // AI options
+                document.getElementById('aiOptionsBtn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.getElementById('aiOptionsMenu').classList.toggle('hidden');
+                });
+                
+                document.getElementById('temperatureSlider').addEventListener('input', (e) => {
+                    document.getElementById('tempValue').textContent = (e.target.value / 10).toFixed(1);
+                });
+                
+                // Prompt templates
+                document.querySelectorAll('.prompt-template').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const template = e.target.dataset.template;
+                        this.loadPromptTemplate(template);
+                    });
+                });
+                
+                // Settings modal
+                document.getElementById('closeSettingsBtn').addEventListener('click', () => this.hideSettingsModal());
+                document.getElementById('saveSettingsBtn').addEventListener('click', () => this.saveSettings());
+                document.getElementById('toggleApiKey').addEventListener('click', () => this.toggleApiKeyVisibility());
+                
+                document.getElementById('fontSizeSlider').addEventListener('input', (e) => {
+                    document.getElementById('fontSizeValue').textContent = e.target.value;
+                    document.getElementById('codeEditor').style.fontSize = `${e.target.value}px`;
+                });
+                
+                // New project modal
+                document.getElementById('cancelProjectBtn').addEventListener('click', () => this.hideNewProjectModal());
+                document.getElementById('createProjectBtn').addEventListener('click', () => this.createNewProject());
+                
+                // Asset modal
+                document.getElementById('addAssetBtn').addEventListener('click', () => this.showAssetModal());
+                document.getElementById('cancelAssetBtn').addEventListener('click', () => this.hideAssetModal());
+                document.getElementById('selectAssetBtn').addEventListener('click', () => document.getElementById('assetFileInput').click());
+                document.getElementById('assetFileInput').addEventListener('change', (e) => this.previewAsset(e));
+                document.getElementById('removeAssetBtn').addEventListener('click', () => this.clearAssetPreview());
+                document.getElementById('uploadAssetBtn').addEventListener('click', () => this.uploadAsset());
+                
+                // Close modals when clicking outside
+                window.addEventListener('click', (e) => {
+                    if (!e.target.closest('#aiOptionsMenu') && !e.target.closest('#aiOptionsBtn')) {
+                        document.getElementById('aiOptionsMenu').classList.add('hidden');
+                    }
+                    
+                    if (!e.target.closest('#deviceMenu') && !e.target.closest('#deviceToggle')) {
+                        document.getElementById('deviceMenu').classList.add('hidden');
+                    }
+                    
+                    if (e.target.id === 'settingsModal') {
+                        this.hideSettingsModal();
+                    }
+                    
+                    if (e.target.id === 'newProjectModal') {
+                        this.hideNewProjectModal();
+                    }
+                    
+                    if (e.target.id === 'assetModal') {
+                        this.hideAssetModal();
+                    }
+                });
+                
+                // Code editor changes
+                document.getElementById('codeEditor').addEventListener('input', (e) => {
+                    this.state.editorContent = e.target.value;
+                    this.state.unsavedChanges = true;
+                    this.updatePreview();
+                });
+                
+                // Close toast
+                document.getElementById('closeToastBtn').addEventListener('click', () => {
+                    document.getElementById('statusToast').classList.add('hidden');
+                });
+                
+                // Initialize textarea height
+                this.adjustTextareaHeight();
+            }
+            
+            adjustTextareaHeight() {
+                const textarea = document.getElementById('promptInput');
+                textarea.style.height = 'auto';
+                textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+            }
+            
+            showTab(tabName) {
+                // Update tab buttons
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('text-slate-300', 'hover:text-white');
+                });
+                
+                const tabBtn = document.getElementById(`${tabName}Tab`);
+                tabBtn.classList.add('bg-blue-600', 'text-white');
+                tabBtn.classList.remove('text-slate-300', 'hover:text-white');
+                
+                // Show selected panel
+                document.getElementById('previewPanel').classList.add('hidden');
+                document.getElementById('codePanel').classList.add('hidden');
+                document.getElementById('assetsPanel').classList.add('hidden');
+                
+                document.getElementById(`${tabName}Panel`).classList.remove('hidden');
+                
+                if (tabName === 'preview') {
+                    this.updatePreview();
+                }
+            }
+            
+            showSettingsModal() {
+                // Load current settings into form
+                const settings = this.state.settings;
+                document.getElementById('apiUrl').value = settings.api.url;
+                document.getElementById('apiKey').value = this.decrypt(settings.api.key);
+                document.getElementById('apiModel').value = settings.api.model;
+                document.getElementById('maxTokens').value = settings.api.maxTokens;
+                document.getElementById('temperature').value = settings.api.temperature;
+                document.getElementById('darkModeToggle').checked = settings.editor.darkMode;
+                document.getElementById('fontSizeSlider').value = settings.editor.fontSize;
+                document.getElementById('fontSizeValue').textContent = settings.editor.fontSize;
+                document.getElementById('autoSaveToggle').checked = settings.editor.autoSave;
+                
+                document.getElementById('settingsModal').classList.remove('hidden');
+            }
+            
+            hideSettingsModal() {
+                document.getElementById('settingsModal').classList.add('hidden');
+            }
+            
+            showNewProjectModal() {
+                document.getElementById('newProjectModal').classList.remove('hidden');
+            }
+            
+            hideNewProjectModal() {
+                document.getElementById('newProjectModal').classList.add('hidden');
+            }
+            
+            showAssetModal() {
+                document.getElementById('assetModal').classList.remove('hidden');
+            }
+            
+            hideAssetModal() {
+                document.getElementById('assetModal').classList.add('hidden');
+                this.clearAssetPreview();
+            }
+            
+            toggleApiKeyVisibility() {
+                const apiKeyInput = document.getElementById('apiKey');
+                const toggleBtn = document.getElementById('toggleApiKey');
+                
+                if (apiKeyInput.type === 'password') {
+                    apiKeyInput.type = 'text';
+                    toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                } else {
+                    apiKeyInput.type = 'password';
+                    toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+                }
+            }
+            
+            loadProjects() {
+                const projectsJson = localStorage.getItem('aiWebsiteBuilder_projects');
+                return projectsJson ? JSON.parse(projectsJson) : {};
+            }
+            
+            loadSettings() {
+                const defaultSettings = {
+                    api: {
+                        url: 'https://openrouter.ai/api/v1/chat/completions',
+                        key: '',
+                        model: 'deepseek/deepseek-r1:free',
+                        maxTokens: 4000,
+                        temperature: 0.7
+                    },
+                    editor: {
+                        darkMode: true,
+                        fontSize: 14,
+                        autoSave: true
+                    }
+                };
+                
+                const savedSettings = localStorage.getItem('aiWebsiteBuilder_settings');
+                return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+            }
+            
+            saveSettings() {
+                const settings = {
+                    api: {
+                        url: document.getElementById('apiUrl').value,
+                        key: this.encrypt(document.getElementById('apiKey').value),
+                        model: document.getElementById('apiModel').value,
+                        maxTokens: parseInt(document.getElementById('maxTokens').value),
+                        temperature: parseFloat(document.getElementById('temperature').value)
+                    },
+                    editor: {
+                        darkMode: document.getElementById('darkModeToggle').checked,
+                        fontSize: parseInt(document.getElementById('fontSizeSlider').value),
+                        autoSave: document.getElementById('autoSaveToggle').checked
+                    }
+                };
+                
+                this.state.settings = settings;
+                localStorage.setItem('aiWebsiteBuilder_settings', JSON.stringify(settings));
+                
+                // Apply editor settings
+                document.getElementById('codeEditor').style.fontSize = `${settings.editor.fontSize}px`;
+                
+                this.hideSettingsModal();
+                this.showToast('Settings saved successfully', 'success');
+            }
+            
+            encrypt(text) {
+                try {
+                    return btoa(unescape(encodeURIComponent(text)));
+                } catch {
+                    return text;
+                }
+            }
+            
+            decrypt(encrypted) {
+                try {
+                    return decodeURIComponent(escape(atob(encrypted)));
+                } catch {
+                    return encrypted;
+                }
+            }
+            
+            createNewProject() {
+                const name = document.getElementById('newProjectName').value || 'Untitled Project';
+                const template = document.getElementById('projectTemplate').value;
+                const framework = document.getElementById('projectFramework').value;
+                
+                const projectId = 'project_' + Date.now();
+                const project = {
+                    id: projectId,
+                    name: name,
+                    template: template,
+                    framework: framework,
+                    code: this.getTemplateCode(template, framework),
+                    metadata: {
+                        created: new Date().toISOString(),
+                        updated: new Date().toISOString(),
+                        tokensUsed: 0,
+                        version: 1
+                    }
+                };
+                
+                this.state.currentProject = project;
+                this.state.projects[projectId] = project;
+                this.saveProjects();
+                
+                // Update UI
+                document.getElementById('projectTitle').textContent = name;
+                document.getElementById('codeEditor').value = project.code;
+                this.state.editorContent = project.code;
+                this.updatePreview();
+                
+                this.updateProjectsList();
+                this.hideNewProjectModal();
+                this.showToast(`Project "${name}" created`, 'success');
+            }
+            
+            getTemplateCode(template, framework) {
+                const templates = {
+                    blank: (fw) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Website</title>
+    ${fw === 'tailwind' ? '<script src="https://cdn.tailwindcss.com"></script>' : ''}
+    ${fw === 'bootstrap' ? '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">' : ''}
+    ${fw === 'vanilla' ? '<style>body { font-family: sans-serif; margin: 0; padding: 20px; }</style>' : ''}
+</head>
+<body ${fw === 'tailwind' ? 'class="bg-gray-50"' : ''}>
+    <div ${fw === 'tailwind' ? 'class="min-h-screen flex items-center justify-center"' : 'style="min-height: 100vh; display: flex; align-items: center; justify-content: center;"'}>
+        <div ${fw === 'tailwind' ? 'class="bg-white p-8 rounded-xl shadow-lg max-w-2xl text-center"' : 'style="background: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 42rem; text-align: center;"'}>
+            <h1 ${fw === 'tailwind' ? 'class="text-3xl font-bold text-gray-800 mb-4"' : 'style="font-size: 1.875rem; font-weight: bold; color: #1f2937; margin-bottom: 1rem;"'}>Welcome to Your New Website</h1>
+            <p ${fw === 'tailwind' ? 'class="text-gray-600 mb-6"' : 'style="color: #4b5563; margin-bottom: 1.5rem;"'}>Start building your website by entering a prompt below.</p>
+            <button ${fw === 'tailwind' ? 'class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"' : 'style="background: #2563eb; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; border: none; cursor: pointer;"'} onclick="alert('Hello World!')">Click Me</button>
+        </div>
+    </div>
+</body>
+</html>`,
+                    
+                    landing: (fw) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Landing Page</title>
+    ${fw === 'tailwind' ? '<script src="https://cdn.tailwindcss.com"></script>' : ''}
+    ${fw === 'bootstrap' ? '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">' : ''}
+    <style>
+        ${fw === 'vanilla' ? `
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .hero { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        ` : ''}
+    </style>
+</head>
+<body ${fw === 'tailwind' ? 'class="bg-white"' : ''}>
+    ${fw === 'tailwind' ? `
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-blue-600">BrandName</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-700 hover:text-blue-600">Home</a>
+                    <a href="#" class="text-gray-700 hover:text-blue-600">Features</a>
+                    <a href="#" class="text-gray-700 hover:text-blue-600">Pricing</a>
+                    <a href="#" class="text-gray-700 hover:text-blue-600">Contact</a>
+                </div>
+                <button class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700">Get Started</button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <h1 class="text-5xl font-bold mb-6">Build Amazing Websites with AI</h1>
+            <p class="text-xl mb-10 max-w-3xl mx-auto">Create beautiful, responsive websites in minutes. No coding required.</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button class="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold text-lg hover:bg-gray-100">Try for Free</button>
+                <button class="bg-transparent border-2 border-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-white/10">View Demo</button>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features -->
+    <section class="py-20">
+        <div class="max-w-6xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12">Powerful Features</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-gray-50 p-8 rounded-xl">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-bolt text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Fast Generation</h3>
+                    <p class="text-gray-600">Generate complete websites in seconds using advanced AI models.</p>
+                </div>
+                <div class="bg-gray-50 p-8 rounded-xl">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-mobile-alt text-green-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Fully Responsive</h3>
+                    <p class="text-gray-600">All websites are mobile-friendly and work on all devices.</p>
+                </div>
+                <div class="bg-gray-50 p-8 rounded-xl">
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fas fa-code text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Clean Code</h3>
+                    <p class="text-gray-600">Production-ready, semantic HTML with proper accessibility.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="text-center">
+                <p class="text-gray-400">© 2023 AI Website Builder. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    ` : ''}
+</body>
+</html>`
+                };
+                
+                return templates[template] ? templates[template](framework) : templates['blank'](framework);
+            }
+            
+            updateProjectsList() {
+                const projectsList = document.getElementById('projectsList');
+                const projects = this.state.projects;
+                
+                if (Object.keys(projects).length === 0) {
+                    projectsList.innerHTML = `
+                        <div class="text-slate-400 text-sm py-8 text-center">
+                            <i class="fas fa-folder-open text-2xl mb-2 block"></i>
+                            No projects yet
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                Object.values(projects).forEach(project => {
+                    const isActive = this.state.currentProject && this.state.currentProject.id === project.id;
+                    const date = new Date(project.metadata.updated).toLocaleDateString();
+                    
+                    html += `
+                        <div class="project-item ${isActive ? 'bg-slate-700' : 'bg-slate-800 hover:bg-slate-700'} rounded-lg p-3 cursor-pointer transition-all" data-id="${project.id}">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center mr-3">
+                                    <i class="fas fa-code text-white text-sm"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-200 truncate">${project.name}</h4>
+                                    <p class="text-xs text-slate-400">Updated: ${date}</p>
+                                </div>
+                                ${isActive ? '<i class="fas fa-check text-blue-400"></i>' : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                projectsList.innerHTML = html;
+                
+                // Add click listeners
+                document.querySelectorAll('.project-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const projectId = e.currentTarget.dataset.id;
+                        this.loadProject(projectId);
+                    });
+                });
+            }
+            
+            loadProject(projectId) {
+                const project = this.state.projects[projectId];
+                if (!project) return;
+                
+                this.state.currentProject = project;
+                this.state.editorContent = project.code;
+                
+                // Update UI
+                document.getElementById('projectTitle').textContent = project.name;
+                document.getElementById('codeEditor').value = project.code;
+                this.updatePreview();
+                
+                // Update projects list to show active project
+                this.updateProjectsList();
+                
+                this.showToast(`Loaded project "${project.name}"`, 'info');
+            }
+            
+            renameCurrentProject() {
+                if (!this.state.currentProject) return;
+                
+                const newName = prompt('Enter new project name:', this.state.currentProject.name);
+                if (newName && newName.trim()) {
+                    this.state.currentProject.name = newName.trim();
+                    this.state.projects[this.state.currentProject.id].name = newName.trim();
+                    this.state.projects[this.state.currentProject.id].metadata.updated = new Date().toISOString();
+                    
+                    document.getElementById('projectTitle').textContent = newName.trim();
+                    this.saveProjects();
+                    this.updateProjectsList();
+                    
+                    this.showToast('Project renamed', 'success');
+                }
+            }
+            
+            saveProjects() {
+                localStorage.setItem('aiWebsiteBuilder_projects', JSON.stringify(this.state.projects));
+            }
+            
+            saveCurrentProject() {
+                if (!this.state.currentProject) return;
+                
+                this.state.currentProject.code = this.state.editorContent;
+                this.state.currentProject.metadata.updated = new Date().toISOString();
+                this.state.currentProject.metadata.version += 1;
+                
+                this.state.projects[this.state.currentProject.id] = this.state.currentProject;
+                this.saveProjects();
+                this.state.unsavedChanges = false;
+                
+                this.showToast('Project auto-saved', 'info');
+            }
+            
+            async generateWebsite() {
+                const promptInput = document.getElementById('promptInput');
+                const prompt = promptInput.value.trim();
+                
+                if (!prompt) {
+                    this.showToast('Please enter a prompt', 'error');
+                    return;
+                }
+                
+                // Check API key
+                const apiKey = this.decrypt(this.state.settings.api.key);
+                if (!apiKey) {
+                    this.showToast('Please set your API key in settings', 'error');
+                    this.showSettingsModal();
+                    return;
+                }
+                
+                // Show loading state
+                const sendBtn = document.getElementById('sendBtn');
+                const sendBtnText = document.getElementById('sendBtnText');
+                const loadingIndicator = document.getElementById('loadingIndicator');
+                
+                sendBtnText.classList.add('hidden');
+                loadingIndicator.classList.remove('hidden');
+                sendBtn.disabled = true;
+                
+                try {
+                    // Prepare enhanced prompt
+                    const framework = document.getElementById('frameworkSelect').value;
+                    const enhancedPrompt = this.enhancePrompt(prompt, framework);
+                    
+                    // Prepare messages
+                    const messages = [
+                        { role: 'system', content: this.SYSTEM_PROMPTS.enhanced(framework) },
+                        ...this.state.aiContext.slice(-4), // Keep last 2 exchanges
+                        { role: 'user', content: enhancedPrompt }
+                    ];
+                    
+                    // Make API request
+                    const response = await this.fetchAIResponse(messages);
+                    
+                    // Update code editor
+                    document.getElementById('codeEditor').value = response.code;
+                    this.state.editorContent = response.code;
+                    
+                    // Update current project
+                    if (this.state.currentProject) {
+                        this.state.currentProject.code = response.code;
+                        this.state.currentProject.metadata.updated = new Date().toISOString();
+                        this.state.currentProject.metadata.tokensUsed += response.usage.total_tokens;
+                        this.state.projects[this.state.currentProject.id] = this.state.currentProject;
+                        this.saveProjects();
+                    }
+                    
+                    // Update AI context
+                    this.state.aiContext.push(
+                        { role: 'user', content: prompt },
+                        { role: 'assistant', content: response.code }
+                    );
+                    
+                    // Limit context size
+                    if (this.state.aiContext.length > 10) {
+                        this.state.aiContext = this.state.aiContext.slice(-10);
+                    }
+                    
+                    // Update token counter
+                    this.state.totalTokensUsed += response.usage.total_tokens;
+                    this.updateTokenCounter();
+                    
+                    // Update preview
+                    this.updatePreview();
+                    
+                    // Clear prompt input
+                    promptInput.value = '';
+                    this.adjustTextareaHeight();
+                    
+                    // Show success
+                    this.showToast(`Website generated successfully (${response.usage.total_tokens} tokens)`, 'success');
+                    
+                } catch (error) {
+                    console.error('Generation error:', error);
+                    this.showToast(error.message || 'Failed to generate website', 'error');
+                } finally {
+                    // Reset button state
+                    sendBtnText.classList.remove('hidden');
+                    loadingIndicator.classList.add('hidden');
+                    sendBtn.disabled = false;
+                }
+            }
+            
+            enhancePrompt(userPrompt, framework) {
+                const enhancements = [];
+                
+                // Framework-specific guidance
+                if (framework === 'tailwind') {
+                    enhancements.push('Use Tailwind CSS via CDN for all styling with responsive classes.');
+                } else if (framework === 'bootstrap') {
+                    enhancements.push('Use Bootstrap 5 via CDN for all styling with responsive classes.');
+                } else {
+                    enhancements.push('Use vanilla CSS with modern properties (flexbox, grid).');
+                }
+                
+                // Always include these requirements
+                enhancements.push(
+                    'Ensure WCAG 2.1 AA accessibility compliance with proper ARIA labels and semantic HTML.',
+                    'Optimize for Core Web Vitals (LCP, FID, CLS).',
+                    'Implement mobile-first responsive design.',
+                    'Include appropriate JavaScript for interactivity with error handling.',
+                    'Make the design visually appealing with a modern aesthetic.',
+                    'Ensure the code is production-ready and well-structured.'
+                );
+                
+                // Add structure expectations based on keywords
+                const lowerPrompt = userPrompt.toLowerCase();
+                if (lowerPrompt.includes('landing') || lowerPrompt.includes('homepage')) {
+                    enhancements.push('Include hero section, features, testimonials, call-to-action, and footer.');
+                }
+                
+                if (lowerPrompt.includes('dashboard') || lowerPrompt.includes('admin')) {
+                    enhancements.push('Include sidebar navigation, data visualizations, responsive tables, and cards.');
+                }
+                
+                if (lowerPrompt.includes('ecommerce') || lowerPrompt.includes('shop') || lowerPrompt.includes('store')) {
+                    enhancements.push('Include product grid, shopping cart functionality, product details, and checkout flow.');
+                }
+                
+                if (lowerPrompt.includes('blog') || lowerPrompt.includes('article')) {
+                    enhancements.push('Include blog posts grid, individual post pages, categories, and author info.');
+                }
+                
+                return `${userPrompt}
+
+ADDITIONAL REQUIREMENTS:
+${enhancements.join('\n')}
+
+Return ONLY the complete HTML file with no additional text.`;
+            }
+            
+            async fetchAIResponse(messages) {
+                const settings = this.state.settings.api;
+                const apiKey = this.decrypt(settings.key);
+                
+                // Temperature from slider
+                const temperatureSlider = document.getElementById('temperatureSlider');
+                const temperature = temperatureSlider ? parseFloat(temperatureSlider.value) / 10 : settings.temperature;
+                
+                // Max tokens from select
+                const maxTokensSelect = document.getElementById('maxTokensSelect');
+                const maxTokens = maxTokensSelect ? parseInt(maxTokensSelect.value) : settings.maxTokens;
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+                
+                try {
+                    const response = await fetch(settings.url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`,
+                            'HTTP-Referer': window.location.origin,
+                            'X-Title': 'AI Website Builder'
+                        },
+                        body: JSON.stringify({
+                            model: settings.model,
+                            messages: messages,
+                            temperature: temperature,
+                            max_tokens: maxTokens,
+                            stream: false
+                        }),
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    // CRITICAL: Follow anti-crash protocol
+                    const rawText = await response.text();
+                    
+                    if (!response.ok) {
+                        let errorMessage = rawText;
+                        try {
+                            const errorJson = JSON.parse(rawText);
+                            errorMessage = errorJson.error?.message || rawText;
+                        } catch (e) { /* Keep raw text */ }
+                        
+                        throw new Error(`API Error (${response.status}): ${errorMessage}`);
+                    }
+                    
+                    // Now safely parse
+                    const data = JSON.parse(rawText);
+                    
+                    // Extract and clean code
+                    let code = data.choices[0]?.message?.content || '';
+                    
+                    // Remove markdown code blocks if present
+                    code = code.replace(/```html|```|`/g, '').trim();
+                    
+                    // If no HTML tags found, wrap in basic structure
+                    if (!code.includes('<!DOCTYPE') && !code.includes('<html')) {
+                        code = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Website</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 0; }
+    </style>
+</head>
+<body>
+${code}
+</body>
+</html>`;
+                    }
+                    
+                    return {
+                        code: code,
+                        usage: data.usage || { total_tokens: 0 },
+                        model: data.model
+                    };
+                    
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        throw new Error('Request timed out. Please try again.');
+                    }
+                    throw error;
+                }
+            }
+            
+            updatePreview() {
+                const iframe = document.getElementById('previewFrame');
+                const code = this.state.editorContent || document.getElementById('codeEditor').value;
+                
+                try {
+                    iframe.srcdoc = code;
+                } catch (error) {
+                    console.error('Preview update error:', error);
+                }
+            }
+            
+            downloadProject() {
+                if (!this.state.currentProject) {
+                    this.showToast('No project to download', 'error');
+                    return;
+                }
+                
+                const code = this.state.editorContent;
+                const filename = `${this.state.currentProject.name.replace(/\s+/g, '-').toLowerCase()}.html`;
+                
+                const blob = new Blob([code], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                this.showToast(`Downloaded "${filename}"`, 'success');
+            }
+            
+            copyCodeToClipboard() {
+                const code = document.getElementById('codeEditor').value;
+                navigator.clipboard.writeText(code).then(() => {
+                    this.showToast('Code copied to clipboard', 'success');
+                });
+            }
+            
+            formatCode() {
+                const editor = document.getElementById('codeEditor');
+                let code = editor.value;
+                
+                // Simple HTML formatting
+                code = code
+                    .replace(/\>\s+\</g, '>\n<') // Add newlines between tags
+                    .replace(/\n\s*\n/g, '\n') // Remove multiple empty lines
+                    .replace(/^\s+/gm, ''); // Remove leading whitespace from lines
+                
+                editor.value = code;
+                this.state.editorContent = code;
+                this.updatePreview();
+                
+                this.showToast('Code formatted', 'info');
+            }
+            
+            setDevicePreview(device) {
+                const container = document.getElementById('previewContainer');
+                
+                switch(device.toLowerCase()) {
+                    case 'mobile':
+                        container.className = 'mobile-frame';
+                        break;
+                    case 'tablet':
+                        container.className = 'w-full md:w-[768px] h-[1024px] border-8 border-slate-700 rounded-2xl overflow-hidden shadow-xl';
+                        break;
+                    default: // desktop
+                        container.className = 'w-full h-full rounded-lg overflow-hidden';
+                }
+                
+                this.updatePreview();
+            }
+            
+            loadPromptTemplate(template) {
+                const templates = {
+                    landing: 'Create a modern landing page for a SaaS product with hero section, features, testimonials, and call-to-action.',
+                    dashboard: 'Build an admin dashboard with sidebar navigation, data visualization charts, recent activity table, and stats cards.',
+                    ecommerce: 'Design an e-commerce product page with product images, description, reviews, add-to-cart button, and related products.',
+                    blog: 'Create a blog homepage with featured post, article grid, categories sidebar, author bios, and newsletter signup.'
+                };
+                
+                document.getElementById('promptInput').value = templates[template] || '';
+                this.adjustTextareaHeight();
+                this.showToast(`Loaded "${template}" template`, 'info');
+            }
+            
+            previewAsset(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                if (!file.type.startsWith('image/')) {
+                    this.showToast('Please select an image file', 'error');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                    this.showToast('File size must be less than 5MB', 'error');
+                    return;
+                }
+                
+                // Show preview
+                document.getElementById('assetPreview').classList.remove('hidden');
+                document.getElementById('assetFileName').textContent = file.name;
+                document.getElementById('assetFileSize').textContent = this.formatFileSize(file.size);
+            }
+            
+            clearAssetPreview() {
+                document.getElementById('assetFileInput').value = '';
+                document.getElementById('assetPreview').classList.add('hidden');
+            }
+            
+            uploadAsset() {
+                const fileInput = document.getElementById('assetFileInput');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    this.showToast('Please select a file first', 'error');
+                    return;
+                }
+                
+                // In a real app, you would upload to a server
+                // For this demo, we'll just show a success message
+                this.showToast(`Uploaded "${file.name}"`, 'success');
+                this.hideAssetModal();
+            }
+            
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            updateTokenCounter() {
+                document.getElementById('tokenCount').textContent = this.state.totalTokensUsed.toLocaleString();
+            }
+            
+            showToast(message, type = 'info') {
+                const toast = document.getElementById('statusToast');
+                const icon = document.getElementById('toastIcon');
+                const toastMessage = document.getElementById('toastMessage');
+                const toastDetails = document.getElementById('toastDetails');
+                
+                // Set icon based on type
+                const icons = {
+                    success: 'fa-check-circle text-emerald-500',
+                    error: 'fa-exclamation-circle text-rose-500',
+                    info: 'fa-info-circle text-blue-400',
+                    warning: 'fa-exclamation-triangle text-amber-500'
+                };
+                
+                icon.className = `fas ${icons[type] || icons.info} mt-0.5 mr-3`;
+                toastMessage.textContent = message;
+                toastDetails.textContent = type === 'success' ? 'Ready' : 'Please check settings';
+                
+                // Show toast
+                toast.classList.remove('hidden');
+                toast.classList.add('animate-fade-in');
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 5000);
+            }
+            
+            loadUI() {
+                // Apply saved settings
+                const settings = this.state.settings;
+                document.getElementById('codeEditor').style.fontSize = `${settings.editor.fontSize}px`;
+                
+                // Show preview tab by default
+                this.showTab('preview');
+                
+                // Load last project if available
+                const projectIds = Object.keys(this.state.projects);
+                if (projectIds.length > 0) {
+                    const lastProjectId = projectIds[projectIds.length - 1];
+                    this.loadProject(lastProjectId);
+                }
+            }
+        }
+        
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new AIWebsiteBuilder();
+            
+            // Close toast when clicking outside
+            document.addEventListener('click', (e) => {
+                const toast = document.getElementById('statusToast');
+                if (!toast.contains(e.target) && !toast.classList.contains('hidden')) {
+                    toast.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+  </html>
