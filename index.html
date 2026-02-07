@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Website Builder | Local-First</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { min-height: 100dvh; display: flex; flex-direction: column; overflow: hidden; background-color: #0f172a; color: #f8fafc; }
+        .sidebar-scroll { height: calc(100vh - 180px); overflow-y: auto; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        textarea { resize: none; }
+        iframe { background: white; border-radius: 8px; width: 100%; height: 100%; border: none; }
+        #codeEditor { font-family: 'Fira Code', monospace; font-size: 14px; background: #1e293b; color: #94a3b8; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="flex flex-1 overflow-hidden">
+    <aside class="w-64 glass-panel flex flex-col p-4 z-20">
+        <button onclick="createNewProject()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition mb-6 flex items-center justify-center gap-2">
+            <span>+</span> New Project
+        </button>
+        
+        <div class="flex-1">
+            <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Project History</h3>
+            <div id="projectList" class="sidebar-scroll space-y-2">
+                </div>
+        </div>
+
+        <button onclick="toggleSettings(true)" class="mt-auto p-2 hover:bg-slate-800 rounded-lg flex items-center gap-2 text-slate-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            Settings
+        </button>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0">
+        <header class="h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50">
+            <div class="flex gap-2">
+                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+
+            <div class="flex bg-slate-800 rounded-lg p-1">
+                <button id="tabPreview" onclick="switchTab('preview')" class="px-4 py-1 rounded-md bg-slate-700 text-sm font-medium">Preview</button>
+                <button id="tabCode" onclick="switchTab('code')" class="px-4 py-1 rounded-md text-sm font-medium text-slate-400">Code</button>
+            </div>
+
+            <button onclick="downloadCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm px-4 py-1.5 rounded-lg border border-slate-700 transition">
+                Download .html
+            </button>
+        </header>
+
+        <section class="flex-1 relative p-4 overflow-hidden">
+            <div id="previewContainer" class="h-full">
+                <iframe id="outputFrame"></iframe>
+            </div>
+            <div id="codeContainer" class="h-full hidden">
+                <textarea id="codeEditor" class="w-full h-full p-4 rounded-lg outline-none border border-slate-700" spellcheck="false"></textarea>
+            </div>
+        </section>
+
+        <footer class="p-4 bg-slate-900 border-t border-slate-800 flex-shrink-0">
+            <div class="max-w-4xl mx-auto flex gap-3 bg-slate-800 p-2 rounded-xl shadow-2xl border border-slate-700">
+                <textarea id="userInput" placeholder="Describe the website you want to build..." class="flex-1 bg-transparent border-none focus:ring-0 text-slate-200 py-2 px-3 h-12" rows="1"></textarea>
+                <button id="sendBtn" onclick="generateWebsite()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-lg font-medium transition flex items-center gap-2">
+                    Generate
+                </button>
+            </div>
+        </footer>
+    </main>
+</div>
+
+<div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl">
+        <h2 class="text-xl font-bold mb-4">API Configuration</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">API URL</label>
+                <input id="apiUrl" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">API Key</label>
+                <input id="apiKey" type="password" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Model ID</label>
+                <input id="modelId" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+        <div class="mt-6 flex gap-3">
+            <button onclick="saveSettings()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition">Save Changes</button>
+            <button onclick="toggleSettings(false)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg font-medium transition">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SYSTEM_PROMPT = "You are a world-class web developer. Output ONLY raw, valid, single-file HTML/CSS/JS code. Do not include markdown backticks or explanations.";
+    
+    let state = {
+        currentCode: '',
+        currentProjectId: null,
+        projects: JSON.parse(localStorage.getItem('projects') || '[]'),
+        settings: JSON.parse(localStorage.getItem('settings') || JSON.stringify({
+            url: 'https://openrouter.ai/api/v1/chat/completions',
+            key: '',
+            model: 'deepseek/deepseek-r1:free'
+        }))
+    };
+
+    // INIT
+    window.onload = () => {
+        document.getElementById('apiUrl').value = state.settings.url;
+        document.getElementById('apiKey').value = state.settings.key;
+        document.getElementById('modelId').value = state.settings.model;
+        renderProjectList();
+    };
+
+    function toggleSettings(show) {
+        document.getElementById('settingsModal').classList.toggle('hidden', !show);
+    }
+
+    function saveSettings() {
+        state.settings = {
+            url: document.getElementById('apiUrl').value,
+            key: document.getElementById('apiKey').value,
+            model: document.getElementById('modelId').value
+        };
+        localStorage.setItem('settings', JSON.stringify(state.settings));
+        toggleSettings(false);
+    }
+
+    function switchTab(tab) {
+        const isPreview = tab === 'preview';
+        document.getElementById('previewContainer').classList.toggle('hidden', !isPreview);
+        document.getElementById('codeContainer').classList.toggle('hidden', isPreview);
+        
+        document.getElementById('tabPreview').className = isPreview ? 'px-4 py-1 rounded-md bg-slate-700 text-sm font-medium' : 'px-4 py-1 rounded-md text-sm font-medium text-slate-400';
+        document.getElementById('tabCode').className = !isPreview ? 'px-4 py-1 rounded-md bg-slate-700 text-sm font-medium' : 'px-4 py-1 rounded-md text-sm font-medium text-slate-400';
+        
+        if (!isPreview) {
+            document.getElementById('codeEditor').value = state.currentCode;
+        }
+    }
+
+    async function generateWebsite() {
+        const prompt = document.getElementById('userInput').value;
+        if (!prompt || !state.settings.key) return alert("Please enter a prompt and ensure API Key is set in Settings.");
+
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+        btn.innerText = "Building...";
+
+        try {
+            const response = await fetch(state.settings.url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${state.settings.key}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: state.settings.model,
+                    messages: [
+                        { role: "system", content: SYSTEM_PROMPT },
+                        { role: "user", content: prompt }
+                    ]
+                })
+            });
+
+            const rawText = await response.text();
+            if (!response.ok) {
+                alert(`API Error: ${rawText}`);
+                return;
+            }
+
+            const data = JSON.parse(rawText);
+            let code = data.choices[0].message.content;
+            
+            // Anti-Markdown Regex
+            code = code.replace(/```html|```javascript|```css|```/gi, '').trim();
+            
+            updateState(code, prompt.substring(0, 20) + '...');
+            renderUI(code);
+            document.getElementById('userInput').value = '';
+        } catch (err) {
+            alert(`Execution Error: ${err.message}`);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Generate";
+        }
+    }
+
+    function updateState(code, title) {
+        state.currentCode = code;
+        if (!state.currentProjectId) {
+            state.currentProjectId = Date.now();
+            state.projects.unshift({ id: state.currentProjectId, title, code });
+        } else {
+            const idx = state.projects.findIndex(p => p.id === state.currentProjectId);
+            state.projects[idx].code = code;
+        }
+        localStorage.setItem('projects', JSON.stringify(state.projects));
+        renderProjectList();
+    }
+
+    function renderUI(code) {
+        const iframe = document.getElementById('outputFrame');
+        iframe.srcdoc = code;
+        state.currentCode = code;
+        document.getElementById('codeEditor').value = code;
+    }
+
+    function renderProjectList() {
+        const container = document.getElementById('projectList');
+        container.innerHTML = state.projects.map(p => `
+            <div onclick="loadProject(${p.id})" class="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer border border-transparent hover:border-slate-700 transition group flex justify-between items-center">
+                <span class="text-sm truncate pr-2">${p.title}</span>
+                <span class="text-[10px] text-slate-500">HTML</span>
+            </div>
+        `).join('');
+    }
+
+    function loadProject(id) {
+        const project = state.projects.find(p => p.id === id);
+        if (project) {
+            state.currentProjectId = project.id;
+            renderUI(project.code);
+            switchTab('preview');
+        }
+    }
+
+    function createNewProject() {
+        state.currentProjectId = null;
+        state.currentCode = '';
+        renderUI('');
+        document.getElementById('userInput').value = '';
+        switchTab('preview');
+    }
+
+    function downloadCode() {
+        if (!state.currentCode) return alert("No code to download!");
+        const blob = new Blob([state.currentCode], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `website-${Date.now()}.html`;
+        a.click();
+    }
+</script>
+
+</body>
+</html>
