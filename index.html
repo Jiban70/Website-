@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Website Builder | Local-First</title>
+    <title>AI Website Builder | Multi-Model Debate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { min-height: 100dvh; display: flex; flex-direction: column; overflow: hidden; background-color: #0f172a; color: #f8fafc; }
-        .sidebar-scroll { height: calc(100vh - 180px); overflow-y: auto; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        textarea { resize: none; }
+        .sidebar-scroll { height: calc(100vh - 200px); overflow-y: auto; }
         iframe { background: white; border-radius: 8px; width: 100%; height: 100%; border: none; }
-        #codeEditor { font-family: 'Fira Code', monospace; font-size: 14px; background: #1e293b; color: #94a3b8; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .loader { width: 20px; height: 20px; border: 3px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -26,48 +24,43 @@
         
         <div class="flex-1">
             <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Project History</h3>
-            <div id="projectList" class="sidebar-scroll space-y-2">
-                </div>
+            <div id="projectList" class="sidebar-scroll space-y-2"></div>
         </div>
 
         <button onclick="toggleSettings(true)" class="mt-auto p-2 hover:bg-slate-800 rounded-lg flex items-center gap-2 text-slate-400">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            Settings
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+            API Settings
         </button>
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0">
-        <header class="h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50">
+        <header class="h-14 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900">
             <div class="flex gap-2">
                 <div class="w-3 h-3 rounded-full bg-red-500"></div>
                 <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
                 <div class="w-3 h-3 rounded-full bg-green-500"></div>
             </div>
-
-            <div class="flex bg-slate-800 rounded-lg p-1">
-                <button id="tabPreview" onclick="switchTab('preview')" class="px-4 py-1 rounded-md bg-slate-700 text-sm font-medium">Preview</button>
-                <button id="tabCode" onclick="switchTab('code')" class="px-4 py-1 rounded-md text-sm font-medium text-slate-400">Code</button>
-            </div>
-
-            <button onclick="downloadCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm px-4 py-1.5 rounded-lg border border-slate-700 transition">
-                Download .html
-            </button>
+            <div id="statusIndicator" class="text-xs text-slate-500 italic">Ready</div>
+            <button onclick="downloadCode()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm px-4 py-1.5 rounded-lg border border-slate-700 transition">Download</button>
         </header>
 
-        <section class="flex-1 relative p-4 overflow-hidden">
-            <div id="previewContainer" class="h-full">
-                <iframe id="outputFrame"></iframe>
-            </div>
-            <div id="codeContainer" class="h-full hidden">
-                <textarea id="codeEditor" class="w-full h-full p-4 rounded-lg outline-none border border-slate-700" spellcheck="false"></textarea>
-            </div>
+        <section class="flex-1 p-4">
+            <iframe id="outputFrame"></iframe>
         </section>
 
-        <footer class="p-4 bg-slate-900 border-t border-slate-800 flex-shrink-0">
-            <div class="max-w-4xl mx-auto flex gap-3 bg-slate-800 p-2 rounded-xl shadow-2xl border border-slate-700">
-                <textarea id="userInput" placeholder="Describe the website you want to build..." class="flex-1 bg-transparent border-none focus:ring-0 text-slate-200 py-2 px-3 h-12" rows="1"></textarea>
-                <button id="sendBtn" onclick="generateWebsite()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-lg font-medium transition flex items-center gap-2">
-                    Generate
+        <div id="debateProgress" class="mx-4 p-2 bg-slate-950 rounded border border-slate-800 hidden text-[10px] font-mono text-blue-400 grid grid-cols-5 gap-2">
+            <div id="m1">Model 1: Waiting...</div>
+            <div id="m2">Model 2: Waiting...</div>
+            <div id="m3">Model 3: Waiting...</div>
+            <div id="m4">Model 4: Waiting...</div>
+            <div id="m5">Model 5: Waiting...</div>
+        </div>
+
+        <footer class="p-4 bg-slate-900 flex-shrink-0">
+            <div class="max-w-4xl mx-auto flex gap-3 bg-slate-800 p-2 rounded-xl border border-slate-700">
+                <textarea id="userInput" placeholder="Ask for a full-stack dashboard..." class="flex-1 bg-transparent border-none focus:ring-0 text-slate-200 py-2 px-3 h-12" rows="1"></textarea>
+                <button id="sendBtn" onclick="runDebateFlow()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-lg font-medium transition flex items-center gap-2">
+                    Generate Best
                 </button>
             </div>
         </footer>
@@ -75,182 +68,119 @@
 </div>
 
 <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl">
-        <h2 class="text-xl font-bold mb-4">API Configuration</h2>
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6">
+        <h2 class="text-xl font-bold mb-4">Master Configuration</h2>
         <div class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">API URL</label>
-                <input id="apiUrl" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">API Key</label>
-                <input id="apiKey" type="password" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Model ID</label>
-                <input id="modelId" type="text" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-blue-500">
-            </div>
+            <input id="apiUrl" type="text" placeholder="API URL" class="w-full bg-slate-800 border-slate-700 rounded-lg px-4 py-2 text-sm">
+            <input id="apiKey" type="password" placeholder="API Key" class="w-full bg-slate-800 border-slate-700 rounded-lg px-4 py-2 text-sm">
+            <input id="modelId" type="text" placeholder="Worker Models (e.g. gpt-4o)" class="w-full bg-slate-800 border-slate-700 rounded-lg px-4 py-2 text-sm">
+            <input id="judgeId" type="text" placeholder="Judge Model (e.g. deepseek-r1)" class="w-full bg-slate-800 border-slate-700 rounded-lg px-4 py-2 text-sm">
         </div>
-        <div class="mt-6 flex gap-3">
-            <button onclick="saveSettings()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition">Save Changes</button>
-            <button onclick="toggleSettings(false)" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg font-medium transition">Close</button>
-        </div>
+        <button onclick="saveSettings()" class="w-full mt-6 bg-blue-600 py-2 rounded-lg font-medium">Save & Close</button>
     </div>
 </div>
 
 <script>
-    const SYSTEM_PROMPT = "You are a world-class web developer. Output ONLY raw, valid, single-file HTML/CSS/JS code. Do not include markdown backticks or explanations.";
-    
     let state = {
         currentCode: '',
-        currentProjectId: null,
         projects: JSON.parse(localStorage.getItem('projects') || '[]'),
         settings: JSON.parse(localStorage.getItem('settings') || JSON.stringify({
             url: 'https://openrouter.ai/api/v1/chat/completions',
             key: '',
-            model: 'deepseek/deepseek-r1:free'
+            model: 'google/gemini-flash-1.5-exp',
+            judge: 'deepseek/deepseek-r1:free'
         }))
     };
-
-    // INIT
-    window.onload = () => {
-        document.getElementById('apiUrl').value = state.settings.url;
-        document.getElementById('apiKey').value = state.settings.key;
-        document.getElementById('modelId').value = state.settings.model;
-        renderProjectList();
-    };
-
-    function toggleSettings(show) {
-        document.getElementById('settingsModal').classList.toggle('hidden', !show);
-    }
 
     function saveSettings() {
         state.settings = {
             url: document.getElementById('apiUrl').value,
             key: document.getElementById('apiKey').value,
-            model: document.getElementById('modelId').value
+            model: document.getElementById('modelId').value,
+            judge: document.getElementById('judgeId').value
         };
         localStorage.setItem('settings', JSON.stringify(state.settings));
         toggleSettings(false);
     }
 
-    function switchTab(tab) {
-        const isPreview = tab === 'preview';
-        document.getElementById('previewContainer').classList.toggle('hidden', !isPreview);
-        document.getElementById('codeContainer').classList.toggle('hidden', isPreview);
-        
-        document.getElementById('tabPreview').className = isPreview ? 'px-4 py-1 rounded-md bg-slate-700 text-sm font-medium' : 'px-4 py-1 rounded-md text-sm font-medium text-slate-400';
-        document.getElementById('tabCode').className = !isPreview ? 'px-4 py-1 rounded-md bg-slate-700 text-sm font-medium' : 'px-4 py-1 rounded-md text-sm font-medium text-slate-400';
-        
-        if (!isPreview) {
-            document.getElementById('codeEditor').value = state.currentCode;
+    async function fetchModel(prompt, model, logId) {
+        try {
+            const res = await fetch(state.settings.url, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${state.settings.key}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: model, messages: [{role: "user", content: prompt}] })
+            });
+            const text = await res.text();
+            if (!res.ok) throw new Error(text);
+            const data = JSON.parse(text);
+            document.getElementById(logId).innerText = "Complete ✅";
+            return data.choices[0].message.content;
+        } catch (e) {
+            document.getElementById(logId).innerText = "Error ❌";
+            return "";
         }
     }
 
-    async function generateWebsite() {
+    async function runDebateFlow() {
         const prompt = document.getElementById('userInput').value;
-        if (!prompt || !state.settings.key) return alert("Please enter a prompt and ensure API Key is set in Settings.");
+        if (!state.settings.key) return toggleSettings(true);
 
         const btn = document.getElementById('sendBtn');
+        const progress = document.getElementById('debateProgress');
         btn.disabled = true;
-        btn.innerText = "Building...";
+        progress.classList.remove('hidden');
 
-        try {
-            const response = await fetch(state.settings.url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${state.settings.key}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: state.settings.model,
-                    messages: [
-                        { role: "system", content: SYSTEM_PROMPT },
-                        { role: "user", content: prompt }
-                    ]
-                })
-            });
+        // 1. Fire 5 Workers
+        const workers = ['m1','m2','m3','m4','m5'].map(id => fetchModel(
+            `Generate a single-file website code for: ${prompt}. Output ONLY code.`, 
+            state.settings.model, id
+        ));
 
-            const rawText = await response.text();
-            if (!response.ok) {
-                alert(`API Error: ${rawText}`);
-                return;
-            }
+        const results = await Promise.all(workers);
+        
+        // 2. The Judge Debates
+        document.getElementById('statusIndicator').innerText = "Judge is evaluating...";
+        const judgePrompt = `Review these 5 website codes and provide the single absolute BEST version. Fix any bugs and ensure it is full-stack ready. CODE ONLY:\n\n${results.join('\n---NEXT VERSION---\n')}`;
+        
+        const finalCode = await fetchModel(judgePrompt, state.settings.judge, 'statusIndicator');
+        const cleanCode = finalCode.replace(/```html|```/gi, '').trim();
 
-            const data = JSON.parse(rawText);
-            let code = data.choices[0].message.content;
-            
-            // Anti-Markdown Regex
-            code = code.replace(/```html|```javascript|```css|```/gi, '').trim();
-            
-            updateState(code, prompt.substring(0, 20) + '...');
-            renderUI(code);
-            document.getElementById('userInput').value = '';
-        } catch (err) {
-            alert(`Execution Error: ${err.message}`);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Generate";
-        }
+        updateProject(cleanCode, prompt);
+        btn.disabled = false;
+        progress.classList.add('hidden');
     }
 
-    function updateState(code, title) {
+    function updateProject(code, prompt) {
         state.currentCode = code;
-        if (!state.currentProjectId) {
-            state.currentProjectId = Date.now();
-            state.projects.unshift({ id: state.currentProjectId, title, code });
-        } else {
-            const idx = state.projects.findIndex(p => p.id === state.currentProjectId);
-            state.projects[idx].code = code;
-        }
+        const newProj = { id: Date.now(), title: prompt.substring(0,25), code };
+        state.projects.unshift(newProj);
         localStorage.setItem('projects', JSON.stringify(state.projects));
-        renderProjectList();
+        document.getElementById('outputFrame').srcdoc = code;
+        renderHistory();
     }
 
-    function renderUI(code) {
-        const iframe = document.getElementById('outputFrame');
-        iframe.srcdoc = code;
-        state.currentCode = code;
-        document.getElementById('codeEditor').value = code;
-    }
-
-    function renderProjectList() {
-        const container = document.getElementById('projectList');
-        container.innerHTML = state.projects.map(p => `
-            <div onclick="loadProject(${p.id})" class="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer border border-transparent hover:border-slate-700 transition group flex justify-between items-center">
-                <span class="text-sm truncate pr-2">${p.title}</span>
-                <span class="text-[10px] text-slate-500">HTML</span>
-            </div>
+    function renderHistory() {
+        document.getElementById('projectList').innerHTML = state.projects.map(p => `
+            <div onclick="load(${p.id})" class="p-2 text-xs bg-slate-800 rounded cursor-pointer hover:bg-slate-700 truncate">${p.title}</div>
         `).join('');
     }
 
-    function loadProject(id) {
-        const project = state.projects.find(p => p.id === id);
-        if (project) {
-            state.currentProjectId = project.id;
-            renderUI(project.code);
-            switchTab('preview');
-        }
+    function load(id) {
+        const p = state.projects.find(x => x.id === id);
+        document.getElementById('outputFrame').srcdoc = p.code;
+        state.currentCode = p.code;
     }
 
-    function createNewProject() {
-        state.currentProjectId = null;
-        state.currentCode = '';
-        renderUI('');
-        document.getElementById('userInput').value = '';
-        switchTab('preview');
-    }
-
-    function downloadCode() {
-        if (!state.currentCode) return alert("No code to download!");
-        const blob = new Blob([state.currentCode], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `website-${Date.now()}.html`;
-        a.click();
-    }
+    function toggleSettings(s) { document.getElementById('settingsModal').classList.toggle('hidden', !s); }
+    function createNewProject() { document.getElementById('outputFrame').srcdoc = ''; state.currentCode = ''; }
+    
+    window.onload = () => {
+        document.getElementById('apiUrl').value = state.settings.url;
+        document.getElementById('apiKey').value = state.settings.key;
+        document.getElementById('modelId').value = state.settings.model;
+        document.getElementById('judgeId').value = state.settings.judge;
+        renderHistory();
+    };
 </script>
-
 </body>
 </html>
